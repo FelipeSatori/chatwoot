@@ -32,11 +32,6 @@ module Enterprise::Message
     self.class.captain_response_triggering.exists?(id: id)
   end
 
-  # Html mail keeps its markup: only plain text is translated for now.
-  def html_email?
-    content_attributes.dig('email', 'html_content', 'full').present?
-  end
-
   private
 
   # Templates are translated before the insert because channels send the message as soon as it exists.
@@ -61,11 +56,12 @@ module Enterprise::Message
   end
 
   def detect_language?
-    incoming? && (text? || incoming_email?) && !auto_reply_email? && !html_email? && account.auto_translate_enabled?
+    incoming? && (text? || incoming_email?) && !auto_reply_email? && account.auto_translate_enabled?
   end
 
   def detect_language
-    language = Captain::Llm::LanguageDetectionService.new(account: account, text: content).language
+    text = Captain::Conversation::MessageText.new(self).texts.join("\n")
+    language = Captain::Llm::LanguageDetectionService.new(account: account, text: text).language
     content_attributes['source_language'] = language if language.present?
   end
 

@@ -33,10 +33,10 @@ class Captain::Llm::MessageTranslationService < Captain::BaseTaskService
   def system_prompt
     <<~SYSTEM_PROMPT_MESSAGE
       You translate messages from a customer support conversation into #{language_name}.
-      The input is a JSON array of messages. Return one translation per message, in the same order.
+      The input is a JSON array of texts. Return one translation per text, in the same order.
       Keep the meaning, tone and formality of the original.
       Keep markdown, line breaks, URLs, emojis, numbers, names, product terms and template variables such as {{contact.name}} exactly as they are.
-      Return a message that is already written in #{language_name} unchanged.
+      Return a text that is already written in #{language_name} unchanged.
     SYSTEM_PROMPT_MESSAGE
   end
 

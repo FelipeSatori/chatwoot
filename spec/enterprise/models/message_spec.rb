@@ -111,13 +111,14 @@ RSpec.describe Message do
       expect(conversation.reload.language).to eq('fr')
     end
 
-    it 'leaves an email with an html body alone' do
+    it 'detects the language of an email from its reply, without the quoted history' do
       create(:message, account: conversation.account, inbox: conversation.inbox, conversation: conversation, message_type: :incoming,
-                       content_type: :incoming_email, content: 'Celui-ci met quatre secondes à charger.',
-                       content_attributes: { email: { html_content: { full: '<p>Celui-ci met quatre secondes à charger.</p>' } } })
+                       content_type: :incoming_email, content: "Celui-ci met quatre secondes à charger.\n\nOn Thu, Oct 16, Support wrote:\n> Hello",
+                       content_attributes: { email: { text_content: { quoted: 'Celui-ci met quatre secondes à charger.' } } })
 
-      expect(Captain::Llm::LanguageDetectionService).not_to have_received(:new)
-      expect(conversation.reload.language).to be_nil
+      expect(Captain::Llm::LanguageDetectionService).to have_received(:new)
+        .with(account: conversation.account, text: 'Celui-ci met quatre secondes à charger.')
+      expect(conversation.reload.language).to eq('fr')
     end
 
     it 'ignores call markers and other inbound messages that are not text' do
