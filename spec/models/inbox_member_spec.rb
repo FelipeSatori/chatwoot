@@ -19,6 +19,23 @@ RSpec.describe InboxMember do
     end
   end
 
+  describe 'inbox cache key' do
+    let(:inbox) { create(:inbox) }
+    let(:user) { create(:user) }
+
+    it 'updates the account inbox cache key when inbox access is added' do
+      expect(inbox.account).to receive(:update_cache_key).with('inbox')
+      create(:inbox_member, inbox: inbox, user: user)
+    end
+
+    it 'updates the account inbox cache key when inbox access is removed' do
+      inbox_member = create(:inbox_member, inbox: inbox, user: user)
+
+      expect(inbox_member.inbox.account).to receive(:update_cache_key).with('inbox')
+      inbox_member.destroy!
+    end
+  end
+
   describe 'filtered unread count invalidation' do
     let(:account) { create(:account) }
     let(:inbox) { create(:inbox, account: account) }

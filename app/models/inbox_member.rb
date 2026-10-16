@@ -25,6 +25,7 @@ class InboxMember < ApplicationRecord
   after_create :add_agent_to_round_robin
   after_destroy :remove_agent_from_round_robin
   after_commit :invalidate_filtered_unread_count_visibility, on: [:create, :destroy]
+  after_commit :update_account_inbox_cache, on: [:create, :destroy]
 
   private
 
@@ -34,6 +35,13 @@ class InboxMember < ApplicationRecord
 
   def remove_agent_from_round_robin
     ::AutoAssignment::InboxRoundRobinService.new(inbox: inbox).remove_agent_from_queue(user_id) if inbox.present?
+  end
+
+  # Agents only list the inboxes they are members of, so adding or removing a member changes that
+  # agent's inbox list without writing any inbox record. Bump the inbox cache key so dashboards
+  # holding a cached list (IndexedDB) refetch it instead of missing the inbox.
+  def update_account_inbox_cache
+    inbox&.account&.update_cache_key('inbox')
   end
 
   def invalidate_filtered_unread_count_visibility
