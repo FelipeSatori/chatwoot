@@ -69,7 +69,7 @@ RSpec.describe Captain::Conversation::AutoTranslateService do
     expect(long_message.reload.translations).to be_nil
   end
 
-  it 'translates the text nodes of an html email and keeps its markup, without the quoted history' do
+  it 'translates the text nodes of an html email and keeps its markup, leaving the quoted history as it is' do
     html = '<div dir="ltr"><p>Bonjour <b>Camille</b></p></div><blockquote class="gmail_quote"><p>Hello</p></blockquote>'
     email = create(:message, account: account, inbox: inbox, conversation: conversation, message_type: :incoming,
                              content: "Bonjour Camille\n\n> Hello", content_attributes: { email: { html_content: { full: html } } })
@@ -78,8 +78,8 @@ RSpec.describe Captain::Conversation::AutoTranslateService do
     described_class.new(conversation: conversation, message_ids: [email.id], target_language: 'en').perform
 
     expect(Captain::Llm::MessageTranslationService).to have_received(:new).with(hash_including(texts: %w[Bonjour Camille]))
-    expect(email.reload.translations['en']).to include('<p>Hello <b>Camille</b></p>')
-    expect(email.reload.translations['en']).not_to include('gmail_quote')
+    expect(email.reload.translations['en'])
+      .to include('<p>Hello <b>Camille</b></p>').and include('<blockquote class="gmail_quote"><p>Hello</p></blockquote>')
   end
 
   it 'detects the contact language from the batch when the conversation has none' do
